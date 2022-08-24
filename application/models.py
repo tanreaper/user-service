@@ -6,6 +6,7 @@ from passlib.hash import sha256_crypt
 
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'User'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
@@ -13,8 +14,9 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(255), unique=False, nullable=True)
     password = db.Column(db.String(255), unique=False, nullable=False)
     is_paid = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)
     authenticated = db.Column(db.Boolean, default=False)
-    date_updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    date_updated = db.Column(db.DateTime, onupdate=datetime.utcnow, default=datetime.utcnow)
 
     def encode_password(self):
         self.password = sha256_crypt.hash(self.password)

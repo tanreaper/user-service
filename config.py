@@ -15,13 +15,13 @@ class Config:
 class DevelopmentConfig(Config):
     ENV = "development"
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://foo:admin2020@localhost/db?host=localhost?port=3306'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:mysqlpw@localhost:55000/brokerDB'
     SQLALCHEMY_ECHO = True
 
     
 class ProductionConfig(Config):
     ENV = "production"
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://foo:admin2020@localhost/db?host=localhost?port=3306'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:mysqlpw@localhost:55000/brokerDB'
     SQLALCHEMY_ECHO = False
 
