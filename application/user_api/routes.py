@@ -40,6 +40,9 @@ def post_register():
     email = request.form['email']
     username = request.form['username']
 
+    print("first_name =>", first_name)
+    print("last_name =>", last_name)
+
     password = sha256_crypt.hash((str(request.form['password'])))
 
     user = User()
@@ -50,10 +53,10 @@ def post_register():
     user.username = username
     user.authenticated = True
 
-    db.session.add(user)
-    db.session.commit()
+    # db.session.add(user)
+    # db.session.commit()
 
-    response = jsonify({'message': 'User added', 'result': user.to_json()})
+    response = jsonify({'message': 'User added', 'status':'success', 'result': user.to_json()})
 
     return response
 
@@ -62,15 +65,20 @@ def post_register():
 def post_login():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
+    password = request.form['password']
     if user:
-        if sha256_crypt.verify(str(request.form['password']), user.password):
+        encrypted_pass = sha256_crypt.encrypt(user.password)
+        test_password = str(password)
+        print(test_password)
+        if sha256_crypt.verify(str(password), encrypted_pass):
             user.encode_api_key()
             db.session.commit()
             login_user(user)
 
-            return make_response(jsonify({'message': 'Logged in', 'api_key': user.api_key}))
-
-    return make_response(jsonify({'message': 'Not logged in'}), 401)
+            return make_response(jsonify({'message': 'Logged in', 'api_key': user.api_key, 'sucess': True}))
+        else:
+            return make_response(jsonify({'message': 'invalid username or password', 'success': False}), 401)
+    return make_response(jsonify({'message': 'invalid username or password', 'success': False}), 401)
 
 
 @user_api_blueprint.route('/api/user/logout', methods=['POST'])

@@ -18,6 +18,9 @@ class User(UserMixin, db.Model):
     authenticated = db.Column(db.Boolean, default=False)
     date_updated = db.Column(db.DateTime, onupdate=datetime.utcnow, default=datetime.utcnow)
 
+    def encode_api_key(self):
+        self.api_key = sha256_crypt.hash(self.username + str(datetime.utcnow))
+
     def encode_password(self):
         self.password = sha256_crypt.hash(self.password)
 
@@ -25,13 +28,26 @@ class User(UserMixin, db.Model):
         return '<User %r>' % (self.username)
 
     def to_json(self):
+        # return {
+        #     'first_name': self.first_name,
+        #     'last_name': self.last_name,
+        #     'username': self.username,
+        #     'email': self.email,
+        #     'id': self.id,
+        #     'api_key': self.api_key,
+        #     'is_active': True,
+        #     'is_paid': self.is_paid
+        # }
+
         return {
             'first_name': self.first_name,
             'last_name': self.last_name,
             'username': self.username,
             'email': self.email,
             'id': self.id,
-            'api_key': self.api_key,
             'is_active': True,
             'is_paid': self.is_paid
         }
+
+
+       
