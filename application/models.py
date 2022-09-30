@@ -17,6 +17,12 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     authenticated = db.Column(db.Boolean, default=False)
     date_updated = db.Column(db.DateTime, onupdate=datetime.utcnow, default=datetime.utcnow)
+    # the code given by other user to join the app
+    invited_code = db.Column(db.String(255))
+    # the code generated to refer other potential users
+    referral_code = db.Column(db.String(255), unique=True, nullable=False)
+
+
 
     def encode_api_key(self):
         self.api_key = sha256_crypt.hash(self.username + str(datetime.utcnow))
