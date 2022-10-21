@@ -23,6 +23,9 @@ def load_user_from_request(request):
             return user
     return None
 
+@user_api_blueprint.route('/')
+def index():
+    return "<p> Welcome to User Api <p>"
 
 @user_api_blueprint.route('/api/users', methods=['GET'])
 def get_users():
@@ -39,9 +42,13 @@ def post_register():
     last_name = request.form['last_name']
     email = request.form['email']
     username = request.form['username']
+    password = request.form['password']
 
     print("first_name =>", first_name)
     print("last_name =>", last_name)
+    print("email =>", email)
+    print("username =>", username)
+    print("password =>", password)
 
     password = sha256_crypt.hash((str(request.form['password'])))
 
@@ -55,7 +62,7 @@ def post_register():
 
     # db.session.add(user)
     # db.session.commit()
-
+    # response = jsonify({'message': 'User added', 'status':'success'})
     response = jsonify({'message': 'User added', 'status':'success', 'result': user.to_json()})
 
     return response
@@ -74,8 +81,9 @@ def post_login():
             user.encode_api_key()
             db.session.commit()
             login_user(user)
+            print("current user =>", current_user);
 
-            return make_response(jsonify({'message': 'Logged in', 'api_key': user.api_key, 'sucess': True}))
+            return make_response(jsonify({'message': 'Logged in', 'api_key': user.api_key, 'success': True}))
         else:
             return make_response(jsonify({'message': 'invalid username or password', 'success': False}), 401)
     return make_response(jsonify({'message': 'invalid username or password', 'success': False}), 401)
@@ -93,7 +101,10 @@ def post_logout():
 def get_username(username):
     item = User.query.filter_by(username=username).first()
     if item is not None:
-        response = jsonify({'result': True})
+        response = jsonify({
+            'id': item.id,
+            'username': item.username,
+            'result': True})
     else:
         response = jsonify({'message': 'Cannot find username'}), 404
     return response
