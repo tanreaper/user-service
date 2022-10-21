@@ -1,11 +1,13 @@
 # application/user_api/routes.py
+import random
+import string
+from flask import make_response, request, jsonify
+from flask_login import current_user, login_user, logout_user, login_required
+from passlib.hash import sha256_crypt
+
 from . import user_api_blueprint
 from .. import db, login_manager
 from ..models import User
-from flask import make_response, request, jsonify
-from flask_login import current_user, login_user, logout_user, login_required
-import random, string
-from passlib.hash import sha256_crypt
 
 
 @login_manager.user_loader
@@ -73,18 +75,6 @@ def post_register():
         return {'message': 'When the user is generated, insertion into database failed', 'code': 201}
 
 
-# the invite code will be used when the bot is activated by this user
-def check_invite(user, invited_code):
-    invited_code = invited_code.strip()
-    # compare this user's invited code with other users' referral code
-    invite_user = User.query.filter(User.referral_code == invited_code).first()  # 用户输入的邀请码和邀请用户数据库中的邀请码比对
-    if invite_user:
-        # TODO: use the ledger service api to add a new ledge of paying the inviter
-        pass
-    else:
-        return {'msg': 'This invited code is invalid.'}
-
-
 def generate_referral_code():
     poolOfChars = string.ascii_letters + string.digits
     random_codes = lambda x, y: ''.join([random.choice(x) for i in range(y)])
@@ -104,9 +94,12 @@ def referral_code(user_id):
                 return {'message': 'the custom referral code has to be alphanumeric.'}
             if len(referral_code) < 4 or len(referral_code) > 12:
                 return {'message': 'the length of custom referral code has to be between 4 to 12'}
+            users = User.query.filter(User.invited_code == user.referral_code )
+            users.invited_code = referral_code
             user.referral_code = referral_code
             try:
-                db.session.add(user)
+                user.save(update_fields=['referral_code'])
+                users.save(update_fields=['invited_code'])
                 # TODO: tell wallet service to create a on chain address for this user
                 db.session.commit()
                 return {'msg': 'success'}

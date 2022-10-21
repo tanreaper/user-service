@@ -22,8 +22,6 @@ class User(UserMixin, db.Model):
     # the code generated to refer other potential users
     referral_code = db.Column(db.String(255), unique=True, nullable=False)
 
-
-
     def encode_api_key(self):
         self.api_key = sha256_crypt.hash(self.username + str(datetime.utcnow))
 
