@@ -135,15 +135,19 @@ def referral_code(user_id):
 def post_login():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
+    print(user)
     password = request.form['password']
     if user:
+        # print('here')
         encrypted_pass = sha256_crypt.encrypt(user.password)
         test_password = str(password)
         print(test_password)
+        print(sha256_crypt.verify(str(password), encrypted_pass))
         if sha256_crypt.verify(str(password), encrypted_pass):
+            # print('here2')
             user.encode_api_key()
-            db.session.commit()
-            login_user(user)
+            # db.session.commit()
+            # login_user(user)
             print("current user =>", current_user);
 
             return make_response(jsonify({'message': 'Logged in', 'api_key': user.api_key, 'success': True}))
