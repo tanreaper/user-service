@@ -118,7 +118,6 @@ def referral_code(user_id):
             user.referral_code = referral_code
             try:
                 db.session.add(user)
-                # TODO: tell wallet service to create a on chain address for this user
                 db.session.commit()
                 return {'msg': 'success'}
             except Exception as e:
