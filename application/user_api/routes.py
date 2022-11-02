@@ -6,6 +6,9 @@ from flask import make_response, request, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 import random, string
 from passlib.hash import sha256_crypt
+import requests
+import os
+import json
 
 
 @login_manager.user_loader
@@ -23,9 +26,11 @@ def load_user_from_request(request):
             return user
     return None
 
+
 @user_api_blueprint.route('/')
 def index():
     return "<p> Welcome to User Api <p>"
+
 
 @user_api_blueprint.route('/api/users', methods=['GET'])
 def get_users():
@@ -58,7 +63,7 @@ def post_register():
     if user:
         return {'message': 'this username already exists'}
     # check if the username is valid
-    if (0< len(username) <= 15) and '.' not in username and '_' not in username:
+    if not ((0 < len(username) <= 15) and '.' not in username and '_' not in username):
         return {'message': 'the username is invalid'}
     user = User()
     user.email = email
@@ -70,30 +75,26 @@ def post_register():
     user.invited_code = invited_code
     user.authenticated = True
 
-    # db.session.add(user)
-    # db.session.commit()
-    # response = jsonify({'message': 'User added', 'status':'success'})
-    response = jsonify({'message': 'User added', 'status':'success', 'result': user.to_json()})
+    db.session.add(user)
+    db.session.commit()
+    response = jsonify({'message': 'User added', 'status': 'success', 'result': user.to_json()})
     try:
-        db.session.add(user)
-        # TODO: tell wallet service to create a on chain address for this user
-        db.session.commit()
-        return {'msg': 'success'}
+        endpoint = "/api/wallet/new_user"
+        api_url = os.environ['API_IP']
+        api_port = os.environ['API_PORT_Wallet']
+        url = "http://" + api_url + ":" + api_port + endpoint
+        data = {'user_uuid': user.id}
+        data = requests.post(url, data=data)
+        # print(data.text)
+        user_address_data = json.loads(data.text)
+        if user_address_data['user_wallet']['base_address']:
+            db.session.commit()
+            return {'msg': 'success'}
+        else:
+            raise Exception("Sorry, the wallet address generation is not successful")
     except Exception as e:
         db.session.rollback()
         return {'message': 'When the user is generated, insertion into database failed', 'code': 201}
-
-
-# the invite code will be used when the bot is activated by this user
-def check_invite(user, invited_code):
-    invited_code = invited_code.strip()
-    # compare this user's invited code with other users' referral code
-    invite_user = User.query.filter(User.referral_code == invited_code).first()  # 用户输入的邀请码和邀请用户数据库中的邀请码比对
-    if invite_user:
-        # TODO: use the ledger service api to add a new ledge of paying the inviter
-        pass
-    else:
-        return {'msg': 'This invited code is invalid.'}
 
 
 def generate_referral_code():
@@ -115,19 +116,23 @@ def referral_code(user_id):
                 return {'message': 'the custom referral code has to be alphanumeric.'}
             if len(referral_code) < 4 or len(referral_code) > 12:
                 return {'message': 'the length of custom referral code has to be between 4 to 12'}
-            user.referral_code = referral_code
+            original_referral_code = user.referral_code
+            # change the users who has this invited code accordingly
             try:
+                user.referral_code = referral_code
+                invited_users = User.query.filter(User.invited_code == original_referral_code). \
+                    update(dict(invited_code=referral_code))
                 db.session.add(user)
                 db.session.commit()
                 return {'msg': 'success'}
             except Exception as e:
                 db.session.rollback()
-                return {'message': 'Insertion into database failed', 'code': 201}
+                return {'message': 'Insertion into database failed because of the '
+                                   'referral code has already been taken', 'code': 201}
         else:
             return {'referral_code': user.referral_code}
     else:
         return f'User not found'
-
 
 
 @user_api_blueprint.route('/api/user/login', methods=['POST'])
