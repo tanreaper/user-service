@@ -13,11 +13,11 @@ login_manager = LoginManager()
 def create_app():
     app = Flask(__name__)
     CORS(app)
-    environment_configuration = os.environ['CONFIGURATION_SETUP']
-    app.config.from_object(environment_configuration)
+    # environment_configuration = os.environ['CONFIGURATION_SETUP']
+    # app.config.from_object(environment_configuration)
 
-    db.init_app(app)
-    login_manager.init_app(app)
+    # db.init_app(app)
+    # login_manager.init_app(app)
 
     with app.app_context():
         # Register blueprints
